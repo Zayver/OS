@@ -27,4 +27,4 @@ clear:
 	rm *.o
 
 remove:
-	rm publicator suscriptor sc
+	rm -r output
