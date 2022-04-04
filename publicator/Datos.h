@@ -1,6 +1,5 @@
 #define MAXDAT 100000
-#define MAXLIN 80
-#define MAXINF 50
+#define MAXINF 60
 typedef struct reg {
   char notifica[MAXINF];
   char tipo;
