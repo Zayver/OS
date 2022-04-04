@@ -11,18 +11,10 @@
 #include "Flags.h"
 #include "StructPid.h"
 
-//se define un nombre para la funcion puntero
-typedef void (*sighandler_t)(int);
-
-sighandler_t signalHandler (void)
-{
-  printf ("Signal Handler\n");
-  
-}
 /*Enviar Pipe
 abre el pipe y envia los datos
 */
-void EnviarPipe(datos *midat, int cuantos,char pipe[]) {
+void EnviarPipe(datos *midat, int cuantos,char pipe[],ElPid pidEnviar) {
 
   int i, creado, fd;
   do{
@@ -33,6 +25,7 @@ void EnviarPipe(datos *midat, int cuantos,char pipe[]) {
   }else creado=1;
   }while(creado==0);
 
+  write(fd,&pidEnviar,sizeof(ElPid));
  for(i=0;i<cuantos;i++){
  write(fd,&midat[i],sizeof(datos));
  }
@@ -101,7 +94,6 @@ int main(int argc, char *argv[])
   Flags flags=determinarFlags(argc,argv);
   //Se guardara el pid en una variable de tipo Elpid
   ElPid mipid;
-  signal (SIGUSR1,  (sighandler_t) signalHandler);
   //Se guarda el PID
   mipid.pid = fork ();
   if (!mipid.pid) {
@@ -110,7 +102,7 @@ int main(int argc, char *argv[])
 
   //Se definen las variables que guardaran la informacion de los publicadores
   datos midat[MAXDAT];
-  char line[MAXLIN], not[MAXINF];
+  char not[MAXINF];
   char tipo;
   FILE *fp;
   int i;
@@ -121,20 +113,16 @@ int main(int argc, char *argv[])
     //Se lee el tipo de noticia
    fscanf(fp, "%c\n",&tipo);
     //Se lee la noticia
-   fgets(not,50,fp);
+   fgets(not,60,fp);
 
-    if(tipo =='#'){
-      printf("%s\n",not);
-    }
-      else{
+    if(tipo !='#')
+     {
     //Entre cada noticia se espera el tiempo solicitado
     sleep (flags.timeN);
-    kill (mipid.pid, SIGUSR1);
     asignar(midat,tipo,not,i++);
-    EnviarPipe(midat,i,flags.pipe);
+    EnviarPipe(midat,i,flags.pipe,mipid);
     i=0;
       }
   }
-
   fclose(fp);
 }
