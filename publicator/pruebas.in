@@ -1,12 +1,13 @@
 #Publicador 1
-A El 25 se presenta la orquesta de cámara
-P Se aproximan las elecciones
-P Hay un nuevo candidato en Alianza Popular 
-E Fue exitosa la presentación de Maluma
+C La NASA está difundiendo imágenes de todas las galaxias
+P Petro obtuvo la mayor cantidad de votos en las primarias
+P Hay un nuevo candidato en Alianza Popular
+C Es la imagen mas próxima que se ha captado
 #Publicador 2
-A XXXXXXX
 P El presidente dio declaraciones
 S Fue robada por un motorizado
 S YYYYYYY
-C El telescopio captó un nuevo exoplaneta
+S ZZZZZZZZ
+P XXXXXXX
+C La NASA informó que la prensa no tendrá acceso.
 #No hay mas Noticias
