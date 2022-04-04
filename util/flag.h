@@ -3,7 +3,7 @@
 
 typedef struct Flags{
     char* publicator_pipe; 
-    char* suscriptor_pipr;
+    char* suscriptor_pipe;
     unsigned int time;
 }Flags;
 
@@ -18,7 +18,7 @@ Flags determineFlags(int len ,char* args[]){
                 f.publicator_pipe=args[i+1];
                 break;
             case 's':
-                f.suscriptor_pipr=args[i+1];
+                f.suscriptor_pipe=args[i+1];
                 break;
             case 't':
                 f.time=atoi(args[i+1]);
