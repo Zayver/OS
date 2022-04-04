@@ -3,24 +3,16 @@
  * @author Santiago Z (s.zunigam@javeriana.edu.co)
  * @brief Implementación simple de una double linked list en C puro con tipo generico
  */
-#include <stdio.h>
+#pragma once
+#include "../suscriptor/struct.h"
 #include <stdlib.h>
 
 #define DEBUG(X) printf("%s",X) 
 
 
-struct people{
-    char *name;
-    int age;
-};
-
-struct test {
-    double a;
-    long g;
-};
 typedef union genetic_t{
-    struct people a;
-    struct test b;
+    struct suscriptor_message_t suscriptor_message_t;
+    //struct test b;
 } generic_t;
 
 typedef struct node_t{
@@ -45,7 +37,7 @@ list_t initList(){
     return l;
 }
 
-void insert(list_t *list, generic_t data){
+void insertList(list_t *list, generic_t data){
     node_t *add = malloc(sizeof(node_t));
     add->prev=list->last; add->next=NULL;
     add->data= data;
@@ -73,7 +65,7 @@ generic_t * getIndex(list_t list, unsigned int index){
     return &aux->data;
 }
 
-void foreach(list_t list, void func(generic_t (f) )){
+void foreachList(list_t list, void func(generic_t (f) )){
     node_t* aux=list.first;
     while(aux->next!=NULL){
         func(aux->data);
@@ -81,20 +73,10 @@ void foreach(list_t list, void func(generic_t (f) )){
     }
 }
 
-
-
-void print1(generic_t t){
-
-    printf("Hola soy: %s y tengo %d años \n", t.a.name, t.a.age );
-}
-
-void print2(generic_t t){
-    printf("NUm 1: %f Num2: %lu \n", t.b.a, t.b.g );
-
-}
 void deleteList(list_t* list){
+    if(list->size==0)
+        return;
     node_t* aux= list->first, *aux2;
-
     while(aux->next!=NULL){
         aux2= aux;
         aux= aux->next;
