@@ -1,128 +1,135 @@
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <signal.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
 #include "Datos.h"
 #include "Flags.h"
-#include "StructPid.h"
+//#include "StructPid.h"
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 /*Enviar Pipe
 abre el pipe y envia los datos
 */
-void EnviarPipe(datos *midat, int cuantos,char pipe[],ElPid pidEnviar) {
+void EnviarPipe(datos_p *midat, int cuantos, char pipe[]) {
 
-  int i, creado, fd;
-  do{
-  fd=open(pipe, O_WRONLY);
-  if(fd==-1){
-  perror("pipe");
-  printf("Se volvera a intentar\n");
-  }else creado=1;
-  }while(creado==0);
+    int i, fd;
+    for(int tries= 0;;tries++) {
+        if(tries==5){
+            printf("5 failed attemps to connect pipe, exiting...\n");
+            exit(1);
+        }
+        fd = open(pipe, O_WRONLY);
+        if(fd<0){
+            perror("Pipe");
+            sleep(3);
+        }
+        else {
+            break;
+        }
+        
+    };
 
-  write(fd,&pidEnviar,sizeof(ElPid));
- for(i=0;i<cuantos;i++){
- write(fd,&midat[i],sizeof(datos));
- }
+    // write(fd,&pidEnviar,sizeof(ElPid));
+    for (i = 0; i < cuantos; i++) {
+        write(fd, &midat[i], sizeof(datos_p));
+    }
 }
 
 /* asignar
    inserta una nueva noticia en la lista en la posicion pos
    e inicializa el tipo de noticia, el contenido y el tamaño del mismo
 */
-void asignar(datos *dat,char prueba,char *notifica, int pos)
-{ 
-  dat[pos].len=(strlen(notifica));
-  dat[pos].tipo=prueba;
-  strcpy(dat[pos].notifica, notifica);
- 
+void asignar(datos_p *dat, char prueba, char *notifica, int pos) {
+    dat[pos].len = (strlen(notifica));
+    dat[pos].tipo = prueba;
+    strcpy(dat[pos].notifica, notifica);
+	dat->pid= getpid();
 }
 /* DeterminarFlags
    Valida que tipo de argumento se tiene segun los flags correspondientes
    en este caso se ignora el nombre
 */
-Flags determinarFlags(int len,char* args[])
-{
-  Flags f; 
-  char *p;
-  int value;
-  for(int i=1; i<len;i+=2){
-    p=args[i];
-    switch(p[1]){
-      case 'f':
-        f.NombreArchivo=args[i+1];
-        break;
-      case'p':
-        f.pipe=args[i+1];
-        break;
-      case't':
-        f.timeN=atoi(args[i+1]);
-        break;
-      default:
-        printf("Flag desconocido: %c\n",p[1]);
-        exit(-1);
-        break;
+Flags determinarFlags(int len, char *args[]) {
+    Flags f;
+    char *p;
+    //int value;
+    for (int i = 1; i < len; i += 2) {
+        p = args[i];
+        switch (p[1]) {
+        case 'f':
+            f.NombreArchivo = args[i + 1];
+            break;
+        case 'p':
+            f.pipe = args[i + 1];
+            break;
+        case 't':
+            f.timeN = atoi(args[i + 1]);
+            break;
+        default:
+            printf("Flag desconocido: %c\n", p[1]);
+            exit(-1);
+            break;
+        }
     }
-  }
-  return f;
+    return f;
 }
 
 /* ayuda
    cuando no se ingresan la cantidad de argumentos que se eseran
    explica el tipo de flags que se pueden utlizar y sus funciones
 */
-void ayuda(){
-  printf("El numero de argumentos ingresado es incorrecto\n");
-  printf("-p pipe nominal por donde los publicadores envían información\n");
-  printf("-f nombre de un archivo donde están diferentes noticias\n");
-  printf("-t tiempo en segundos entre el envío de una noticia y el envío de la siguiente\n");
+void ayuda() {
+    printf("El numero de argumentos ingresado es incorrecto\n");
+    printf("-p pipe nominal por donde los publicadores envían información\n");
+    printf("-f nombre de un archivo donde están diferentes noticias\n");
+    printf("-t tiempo en segundos entre el envío de una noticia y el envío de "
+           "la siguiente\n");
 }
 
-int main(int argc, char *argv[]) 
-{
-  //Se espera que se ingerese 7 arguemntos, en caso contrario se muestra la funcion ayuda
-  if(argc !=7){
-    ayuda();
-    exit(-1);
-  }
-  //Se guardan los argumentos enviados en en una variable tipo Flags
-  Flags flags=determinarFlags(argc,argv);
-  //Se guardara el pid en una variable de tipo Elpid
-  ElPid mipid;
-  //Se guarda el PID
-  mipid.pid = fork ();
-  if (!mipid.pid) {
-    execlp ("sleep", "sleep", "5",   NULL);
-  }
+int main(int argc, char *argv[]) {
+    // Se espera que se ingerese 7 arguemntos, en caso contrario se muestra la
+    // funcion ayuda
+    if (argc != 7) {
+        ayuda();
+        exit(-1);
+    }
+    // Se guardan los argumentos enviados en en una variable tipo Flags
+    Flags flags = determinarFlags(argc, argv);
+    // Se guarda el PID
 
-  //Se definen las variables que guardaran la informacion de los publicadores
-  datos midat[MAXDAT];
-  char not[MAXINF];
-  char tipo;
-  FILE *fp;
-  int i;
-  
-  fp = fopen(flags.NombreArchivo, "r");
-  i=0;
-  while (!feof(fp))  {
-    //Se lee el tipo de noticia
-   fscanf(fp, "%c\n",&tipo);
-    //Se lee la noticia
-   fgets(not,60,fp);
+    // Se definen las variables que guardaran la informacion de los publicadores
+    datos_p midat[MAXDAT];
+    char not [MAXINF];
+    char tipo;
+    FILE *fp;
+    int i;
 
-    if(tipo !='#')
-     {
-    //Entre cada noticia se espera el tiempo solicitado
-    sleep (flags.timeN);
-    asignar(midat,tipo,not,i++);
-    EnviarPipe(midat,i,flags.pipe,mipid);
-    i=0;
-      }
-  }
-  fclose(fp);
+    fp = fopen(flags.NombreArchivo, "r");
+    if(fp == NULL){
+        perror("Error opening file ");
+        exit(errno);
+    }
+    i = 0;
+    
+    while (!feof(fp)) {
+
+        // Se lee el tipo de noticia
+        fscanf(fp, "%c\n", &tipo);
+        // Se lee la noticia
+        fgets(not, 80, fp);
+
+        if (tipo != '#') {
+            // Entre cada noticia se espera el tiempo solicitado
+            sleep(flags.timeN);
+            asignar(midat, tipo, not, i++);
+            EnviarPipe(midat, i, flags.pipe);
+            i = 0;
+        }
+    }
+    fclose(fp);
 }

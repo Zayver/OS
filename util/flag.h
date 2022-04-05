@@ -35,8 +35,8 @@ Flags determineFlags(int len ,char* args[]){
 
 
 void help(){
-    printf("Error en los argumentos, uso ./publisher [opción]... [argumento]...\n");
-    printf("-f      Nombre del fichero de noticias\n");
-    printf("-p      Pipe nominal para la comunicación\n");
+    printf("Error en los argumentos, uso ./sc [opción]... [argumento]...\n");
+    printf("-s      Pipe nominal para la comunicación de suscriptores\n");
+    printf("-p      Pipe nominal para la comunicación de publicador\n");
     printf("-t      Tiempo de espera entre refresco\n");
 }
