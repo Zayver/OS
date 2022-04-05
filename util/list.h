@@ -5,12 +5,16 @@
  */
 #pragma once
 #include "../suscriptor/struct.h"
+#include <stdio.h>
+#include <sys/types.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #define DEBUG(X) printf("%s",X) 
 
 
 typedef union genetic_t{
+    pid_t pid; //! Solo para el publicador ya que no tiene sentido guardar info de este diferente (por el moomento)
     struct suscriptor_message_t suscriptor_message_t;
     //struct test b;
 } generic_t;
@@ -66,8 +70,9 @@ generic_t * getIndex(list_t list, unsigned int index){
 }
 
 void foreachList(list_t list, void func(generic_t (f) )){
+    printf("AUX_DATA:\n");
     node_t* aux=list.first;
-    while(aux->next!=NULL){
+    while(aux!=NULL){
         func(aux->data);
         aux=aux->next;
     }
@@ -83,4 +88,25 @@ void deleteList(list_t* list){
         free(aux2);
     }
     free(aux);
+}
+
+/**
+ * @brief 
+ * 
+ * @param list 
+ * @param pid 
+ * @return true si ya se encuentra el pid en la lista
+ * @return false 
+ */
+bool checkPIDP(list_t list, pid_t pid){
+    if(list.size==0)
+        return false;
+    node_t* aux= list.first;
+    while (aux!=NULL) {
+        if(aux->data.pid== pid)
+            return true;
+        aux= aux->next;
+    }
+    return false;
+
 }

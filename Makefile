@@ -19,9 +19,9 @@ suscriptor: suscriptor.o
 	gcc suscriptor.o -o $(DIRECTORY)/suscriptor
 
 sc.o: sc/sc.c
-	gcc -c sc/sc.c -o sc.o
+	gcc -c sc/sc.c -o sc.o -pthread
 sc: sc.o
-	gcc sc.o -o $(DIRECTORY)/sc
+	gcc sc.o -o $(DIRECTORY)/sc -pthread
 
 clear:
 	rm *.o
