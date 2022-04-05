@@ -16,8 +16,8 @@
 #include <errno.h>
 #include <signal.h>
 #include "linker.h"
-
-
+#include <signal.h>
+#include <sys/wait.h>
 
 void init(Flags f){
     int status;
@@ -38,7 +38,6 @@ void endProcess(int value){
 }
 
 void endPublicators(generic_t pid){
-    printf("PID: %d", pid.pid);
     if(kill(pid.pid, SIGTERM)<0){
         perror("Error sending signal ");
         //Debería exit ? 
@@ -52,7 +51,7 @@ int main(int argc, char* argv[]){
     }
     //flags listas
     Flags flags = determineFlags(argc, argv);
-    list_t publicators = initList(), suscriptors= initList();
+    list_t publicators = initList(), suscriptors= initList(), news = initList();
     init(flags);
 
     //signal handlers
@@ -63,7 +62,7 @@ int main(int argc, char* argv[]){
     suscriptor_thread_t suscriptor_data; suscriptor_data.inputPipe= flags.suscriptor_pipe;
     suscriptor_data.list= suscriptors;
     publicator_thread_t publicator_data; publicator_data.inputPipe= flags.publicator_pipe;
-    publicator_data.list= publicators;
+    publicator_data.list= &publicators;
 
     if(pthread_create(&suscriptor_thread, NULL, (void*)suscriptorThread, (void*) &suscriptor_data)<0) {
         perror("Suscriptor thread ");
@@ -80,15 +79,13 @@ int main(int argc, char* argv[]){
         pause();
     }
 
-    //TODO send signal to all suscripted processes to the server
+    //Send signal to all suscripted processes to the server
+    foreachList(publicators,endPublicators);
+
     //free recources and delete pipes
     unlink(flags.publicator_pipe);
     unlink(flags.suscriptor_pipe);
     deleteList(&publicators);
     deleteList(&suscriptors);
-
-
-    printf("SALIR\n");
-
     return 0;
 }

@@ -15,10 +15,9 @@
 
 void publicatorThread(void * rdata){
 
-    signal(SIGUSR1, );
     //la primera entrega no es concurrente el acceso al archivo por lo que es posible hacer esto asi:
-    suscriptor_thread_t *data = (suscriptor_thread_t*) rdata;  
-
+    publicator_thread_t *data = rdata;
+    printf("Lista otro: %p \n", data->list);
 
     int fd = open(data->inputPipe, O_RDONLY);
     if(fd<0){
@@ -28,20 +27,18 @@ void publicatorThread(void * rdata){
     datos_p received;
     generic_t temporal;
 
-    while(){
+    while(true){
         size_t bytes = read(fd, &received, sizeof(datos_p));
         if(bytes!=0){
             //si bytes =0 no hay nada en el pipe y es esperar
-            if(!checkPIDP(data->list, received.pid)){
+            if(!checkPIDP(*data->list, received.pid)){
                 temporal.pid=received.pid;
-                insertList(&data->list, temporal);
+                insertList(data->list, temporal);
             }
         }     
     }
     
-    close(fd);
-    printf("sdfsdfsdffsd\n");
-
+    //close(fd);
 }
 void suscriptorThread(void * rdata){
     suscriptor_thread_t *data = rdata; 

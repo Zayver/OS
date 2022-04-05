@@ -70,7 +70,8 @@ generic_t * getIndex(list_t list, unsigned int index){
 }
 
 void foreachList(list_t list, void func(generic_t (f) )){
-    printf("AUX_DATA:\n");
+    if(list.size==0)
+        return;
     node_t* aux=list.first;
     while(aux!=NULL){
         func(aux->data);
