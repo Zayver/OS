@@ -1,3 +1,8 @@
+/**
+ * @file struct.h
+ * @author Santiago Z
+ * @brief Cabecera de las estructuras de datos de los threads 
+ */
 #include "../util/list.h"
 #pragma once
 

@@ -11,7 +11,7 @@
 #include "../suscriptor/suscriptor.h"
 # include "../suscriptor/noticia.h"
 
-#define DEBUG(X) printf("%s",X) 
+//#define DEBUG(X) printf("%s",X) 
 
 
 typedef union genetic_t{
@@ -107,8 +107,12 @@ bool checkPIDP(list_t list, pid_t pid){
         return false;
     node_t* aux= list.first;
     while (aux!=NULL) {
-        if(aux->data.pid== pid)
+        
+        if(aux->data.pid== pid){
             return true;
+
+        }
+            
         aux= aux->next;
     }
     return false;

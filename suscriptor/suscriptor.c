@@ -67,7 +67,8 @@ void recibirNoticias() {
     // Se lee un mensaje por el segundo pipe.
     while (true) {
         size_t bytes = read(fd, &noticia, sizeof(Noticia));
-        printf("Se lee la noticia: %c %s \n", noticia.tipo, noticia.info);
+        if(bytes!=0)
+            printf("Tipo: %c, Noticia: %s \n", noticia.tipo, noticia.info);
     }
 }
 

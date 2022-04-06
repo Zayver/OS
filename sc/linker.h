@@ -1,10 +1,14 @@
+/**
+ * @file linker.h
+ * @author Santiago Z
+ * @brief Cabecera que define las rutinas de los hilos del sc
+ */
 #pragma once
 #include "../publicator/Datos.h"
 #include "../suscriptor/noticia.h"
 #include "../suscriptor/suscriptor.h"
 #include "../util/list.h"
 #include "struct.h"
-#include <bits/pthreadtypes.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
@@ -16,6 +20,10 @@
 #include <unistd.h>
 
 static volatile bool checkNew = false;
+/**
+ * @brief Thread principal de los publicadores
+ * @param rdata void* de los datos que recibe el thread
+ */
 void publicatorThread(void *rdata) {
 
     // la primera entrega no es concurrente el acceso al archivo por lo que es
@@ -44,11 +52,11 @@ void publicatorThread(void *rdata) {
                 removeList(data->list, received.pid);
                 if (data->list->size == 0) {
                     sleep(
-                        data->wait_time); // esperar el tiemṕo a ver si read
+                        data->wait_time); // esperar el tiempo a ver si read
                                           // produce 0 bytes si si es que ningún
                     // publicador seguirá enviando entonces finalizar thread
                 }
-            } else if (!checkPIDP(*data->list, received.pid)) {
+            } else if (checkPIDP(*data->list, received.pid)) {
                 temporal.pid = received.pid;
                 insertList(data->list, temporal);
             }
@@ -59,6 +67,10 @@ void publicatorThread(void *rdata) {
     pthread_exit(NULL);
 }
 
+/**
+ * @brief Subthread de los suscribtores, 1 por suscriptor
+ * @param rdata Data generica pasada al thread
+ */
 void subSuscriptorThread(void *rdata) {
     suscriptor_thread_t *data = rdata; char buff[10];
     sprintf(buff,"%d", data->list->last->data.suscriptor_t.pid);
@@ -79,15 +91,20 @@ void subSuscriptorThread(void *rdata) {
                     perror("Opening pipe");
                     exit(1);
                 }
-
-                size_t bytes =
-                    write(fd, &data->news->last->data.news, sizeof(Noticia));
+                if(data->news->last->data.news.len!=0){
+                    size_t bytes = write(fd, &data->news->last->data.news, sizeof(Noticia));
+                }
+                
                 checkNew = false; // requeriría atomicidad y es por eso que es
                                   // solución temporal
             }
         }
     }
 }
+/**
+ * @brief Thread general de los suscriptores que escucha el pipe por peticiones
+ * @param rdata data generica al thread
+ */
 void suscriptorThread(void *rdata) {
     suscriptor_thread_t *data = rdata;
     int fd = open(data->inputPipe, O_RDONLY);

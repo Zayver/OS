@@ -19,6 +19,10 @@
 #include <signal.h>
 #include <sys/wait.h>
 
+/**
+ * @brief  Inicializa todo en base a los flags otorgados como argument
+ * @param f  Flags pasados por linea de comandos
+ */
 void init(Flags f){
     int status;
     status = mkfifo(f.publicator_pipe, 0666);
@@ -33,11 +37,19 @@ void init(Flags f){
     }
 }
 
+/**
+ * @brief Signal handher de SIGTERM
+ * @param value Valor de la signal
+ */
 void endProcess(int value){
     run= false;
     exit(1);
 }
 
+/**
+ * @brief Si en algún punto el sc muere y los publicadores están conectados enviarles SIGTERM
+ * @param pid pid por proceso
+ */
 void endPublicators(generic_t pid){
     if(kill(pid.pid, SIGTERM)<0){
         perror("Error sending signal ");
@@ -48,6 +60,10 @@ void endPublicators(generic_t pid){
         }
     }
 }
+/**
+ * @brief Finalizar todos los suscriptores
+ * @param sus Union generica de lista especializada para suscriptor
+ */
 void endSuscriptors(generic_t sus){
     if(kill(sus.suscriptor_t.pid, SIGTERM)<0){
         perror("Error sending signal ");
@@ -106,6 +122,8 @@ int main(int argc, char* argv[]){
     unlink(flags.suscriptor_pipe);
     deleteList(&publicators);
     deleteList(&suscriptors);
+    //deleteList(&news);
+
 
     printf("Trabajo realizado :D \n");
     return 0;
