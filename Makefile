@@ -7,7 +7,7 @@ directory:
 	mkdir -p $(DIRECTORY)
 
 publicator.o: publicator/publicator.c
-	gcc -c publicator/publicator.c -o publicator.o -Iutil
+	gcc -c publicator/publicator.c -o publicator.o
 
 publicator: publicator.o
 	gcc publicator.o -o $(DIRECTORY)/publicator

@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#pragma once
 #define MAXCAT 5
 
 typedef struct Suscriptor_ {

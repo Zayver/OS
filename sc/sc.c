@@ -35,13 +35,31 @@ void init(Flags f){
 
 void endProcess(int value){
     run= false;
+    exit(1);
 }
 
 void endPublicators(generic_t pid){
     if(kill(pid.pid, SIGTERM)<0){
         perror("Error sending signal ");
-        //Debería exit ? 
+        if(errno==3){
+            //si errno vale 3 entonces no existe el proceso por lo que es probable que ya haya terminado
+            //mediante otro mecanismo, lo mas probable es un sigterm de la terminal 
+            printf("No existe el proceso, es probable que ya se haya terminado el proceso con pid: %d\n", pid.pid);
+        }
     }
+}
+void endSuscriptors(generic_t sus){
+    if(kill(sus.suscriptor_t.pid, SIGTERM)<0){
+        perror("Error sending signal ");
+        if(errno==3){
+            //si errno vale 3 entonces no existe el proceso por lo que es probable que ya haya terminado
+            //mediante otro mecanismo, lo mas probable es un sigterm de la terminal 
+            printf("No existe el proceso, es probable que ya se haya terminado el proceso con pid: %d\n", sus.suscriptor_t.pid);
+        }
+    }
+    char buff[10];
+    sprintf(buff,"%d", sus.suscriptor_t.pid);
+    unlink(buff);
 }
 
 int main(int argc, char* argv[]){
@@ -60,9 +78,10 @@ int main(int argc, char* argv[]){
     //threads
     pthread_t suscriptor_thread, publicator_thread;
     suscriptor_thread_t suscriptor_data; suscriptor_data.inputPipe= flags.suscriptor_pipe;
-    suscriptor_data.list= suscriptors;
+    suscriptor_data.list= &suscriptors; suscriptor_data.news= &news;
     publicator_thread_t publicator_data; publicator_data.inputPipe= flags.publicator_pipe;
-    publicator_data.list= &publicators;
+    publicator_data.list= &publicators; publicator_data.wait_time= flags.time;
+    publicator_data.news=&news;
 
     if(pthread_create(&suscriptor_thread, NULL, (void*)suscriptorThread, (void*) &suscriptor_data)<0) {
         perror("Suscriptor thread ");
@@ -74,18 +93,20 @@ int main(int argc, char* argv[]){
         exit(errno);
     }
 
-    //main loop
-    while(run){
-        pause();
-    }
+    // todo está dictado por el thread de los publicadores 
+    pthread_join(publicator_thread,NULL);
 
-    //Send signal to all suscripted processes to the server
+
+    //Enviar SIGTERM a todos los procesos suscritos al servidor
     foreachList(publicators,endPublicators);
+    foreachList(suscriptors,endSuscriptors);
 
     //free recources and delete pipes
     unlink(flags.publicator_pipe);
     unlink(flags.suscriptor_pipe);
     deleteList(&publicators);
     deleteList(&suscriptors);
+
+    printf("Trabajo realizado :D \n");
     return 0;
 }

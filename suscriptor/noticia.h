@@ -1,8 +1,8 @@
 #include <sys/types.h>
-
+#pragma once
 #define MAXDAT 1000
 #define MAXINF 81 
-typedef struct datos_p {
+typedef struct noticia {
     char info[MAXINF];
     char tipo;
     int len;

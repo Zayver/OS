@@ -15,7 +15,7 @@
 /*Enviar Pipe
 abre el pipe y envia los datos
 */
-void EnviarPipe(datos_p *midat, int cuantos, char pipe[]) {
+int EnviarPipe(datos_p *midat, int cuantos, char pipe[]) {
 
     int i, fd;
     for(int tries= 0;;tries++) {
@@ -36,8 +36,11 @@ void EnviarPipe(datos_p *midat, int cuantos, char pipe[]) {
 
     // write(fd,&pidEnviar,sizeof(ElPid));
     for (i = 0; i < cuantos; i++) {
-        write(fd, &midat[i], sizeof(datos_p));
+        printf("%c -- %s",midat[i].tipo, midat[i].notifica);
+        write(fd, &midat[i], sizeof(midat[i]));
     }
+    return fd;
+    
 }
 
 /* asignar
@@ -115,7 +118,7 @@ int main(int argc, char *argv[]) {
         exit(errno);
     }
     i = 0;
-    
+    int fd;
     while (!feof(fp)) {
 
         // Se lee el tipo de noticia
@@ -127,9 +130,13 @@ int main(int argc, char *argv[]) {
             // Entre cada noticia se espera el tiempo solicitado
             sleep(flags.timeN);
             asignar(midat, tipo, not, i++);
-            EnviarPipe(midat, i, flags.pipe);
+            fd=EnviarPipe(midat, i, flags.pipe);
             i = 0;
         }
     }
     fclose(fp);
+    //mensaje final
+    datos_p final; final.len=0; final.pid=getpid();
+    write(fd,&final, sizeof(datos_p));
+    close(fd);
 }

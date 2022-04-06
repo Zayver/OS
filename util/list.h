@@ -4,18 +4,20 @@
  * @brief Implementación simple de una double linked list en C puro con tipo generico
  */
 #pragma once
-#include "../suscriptor/struct.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include "../suscriptor/suscriptor.h"
+# include "../suscriptor/noticia.h"
 
 #define DEBUG(X) printf("%s",X) 
 
 
 typedef union genetic_t{
     pid_t pid; //! Solo para el publicador ya que no tiene sentido guardar info de este diferente (por el moomento)
-    struct suscriptor_message_t suscriptor_message_t;
+    struct Suscriptor_ suscriptor_t;
+    struct noticia news;
     //struct test b;
 } generic_t;
 
@@ -89,6 +91,7 @@ void deleteList(list_t* list){
         free(aux2);
     }
     free(aux);
+    list->size=0;
 }
 
 /**
@@ -110,4 +113,20 @@ bool checkPIDP(list_t list, pid_t pid){
     }
     return false;
 
+}
+
+void removeList(list_t* list, pid_t pid){
+    node_t* aux= list->first;
+    while (aux!=NULL) {
+        if(aux->data.pid==pid){
+            if(aux->prev!=NULL)
+                aux->prev->next= aux->next;
+            if(aux->next!=NULL)
+                aux->next->prev= aux->prev;
+            free(aux);
+            list->size--;
+            return ;
+        }
+        aux= aux->next;
+    }
 }

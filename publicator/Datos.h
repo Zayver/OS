@@ -1,4 +1,3 @@
-
 #include <sys/types.h>
 #pragma once
 #define MAXDAT 1000
@@ -8,5 +7,4 @@ typedef struct datos_p {
     char tipo;
     int len;
     pid_t pid;
-
 } datos_p;
