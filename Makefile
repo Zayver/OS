@@ -5,6 +5,7 @@ COMPILER=gcc
 
 directory:
 	mkdir -p $(DIRECTORY)
+	cp publicator/Noticias* $(DIRECTORY)/
 
 publicator.o: publicator/publicator.c
 	gcc -c publicator/publicator.c -o publicator.o
