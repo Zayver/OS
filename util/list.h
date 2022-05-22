@@ -18,6 +18,7 @@ typedef union genetic_t{
     pid_t pid; //! Solo para el publicador ya que no tiene sentido guardar info de este diferente (por el moomento)
     struct Suscriptor_ suscriptor_t;
     struct noticia news;
+    pthread_t id_suscruptor;
     //struct test b;
 } generic_t;
 

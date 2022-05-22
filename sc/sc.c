@@ -6,8 +6,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "../util/flag.h"
-#include "../util/list.h"
+
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -15,9 +14,12 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <signal.h>
-#include "linker.h"
 #include <signal.h>
 #include <sys/wait.h>
+#include "../util/flag.h"
+#include "../util/list.h"
+#include "linker.h"
+
 
 /**
  * @brief  Inicializa todo en base a los flags otorgados como argument
@@ -37,14 +39,6 @@ void init(Flags f){
     }
 }
 
-/**
- * @brief Signal handher de SIGTERM
- * @param value Valor de la signal
- */
-void endProcess(int value){
-    run= false;
-    exit(1);
-}
 
 /**
  * @brief Si en algún punto el sc muere y los publicadores están conectados enviarles SIGTERM
@@ -85,19 +79,23 @@ int main(int argc, char* argv[]){
     }
     //flags listas
     Flags flags = determineFlags(argc, argv);
-    list_t publicators = initList(), suscriptors= initList(), news = initList();
+    list_t publicators = initList(), suscriptors= initList();
+    list_t news[NEWS_LEN];
+    for(int i=0; i<NEWS_LEN;i++){
+        news[i]= initList();
+    }
     init(flags);
 
     //signal handlers
-    signal(SIGINT, endProcess);
+    //signal(SIGINT, endProcess);
 
     //threads
     pthread_t suscriptor_thread, publicator_thread;
     suscriptor_thread_t suscriptor_data; suscriptor_data.inputPipe= flags.suscriptor_pipe;
-    suscriptor_data.list= &suscriptors; suscriptor_data.news= &news;
+    suscriptor_data.list= &suscriptors; suscriptor_data.news= news;
     publicator_thread_t publicator_data; publicator_data.inputPipe= flags.publicator_pipe;
     publicator_data.list= &publicators; publicator_data.wait_time= flags.time;
-    publicator_data.news=&news;
+    publicator_data.news=news;
 
     if(pthread_create(&suscriptor_thread, NULL, (void*)suscriptorThread, (void*) &suscriptor_data)<0) {
         perror("Suscriptor thread ");

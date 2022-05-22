@@ -2,6 +2,7 @@
 #include "Flags.h"
 #include "noticia.h"
 #include <fcntl.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -197,13 +198,17 @@ Flags determinarFlags(int len, char *args[]) {
     return f;
 }
 
+void sig(int sign){
+    exit(0);
+}
+
 int main(int argc, char *argv[]) {
 
     if (argc != 3) {
         ayuda();
         exit(-1);
     }
-
+    signal(SIGTERM, sig);
     Flags flags = determinarFlags(argc, argv);
 
     Suscriptor s;
