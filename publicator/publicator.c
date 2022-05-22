@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
     }
     fclose(fp);
     //mensaje final
-    datos_p final; final.len=0; final.pid=getpid();
+    datos_p final; final.len=0; final.pid=getpid(); final.tipo='-';
     write(fd,&final, sizeof(datos_p));
     close(fd);
 }

@@ -3,6 +3,7 @@ all: directory publicator suscriptor sc clear
 DIRECTORY=output
 COMPILER=gcc
 
+
 directory:
 	mkdir -p $(DIRECTORY)
 	cp publicator/Noticias* $(DIRECTORY)/

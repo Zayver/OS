@@ -148,7 +148,7 @@ char *solicitarCategorias() {
 
                 if (cont) {
                     while (i < 5) {
-                        categorias[i] = ' ';
+                        categorias[i] = '-';
                         i++;
                     }
                     printf("\nCategorias confirmadas\n");
@@ -212,12 +212,14 @@ int main(int argc, char *argv[]) {
     Flags flags = determinarFlags(argc, argv);
 
     Suscriptor s;
-    strcpy(s.categorias, solicitarCategorias());
+    char * categorias =solicitarCategorias();
+    strcpy(s.categorias, categorias);
     s.pid = getpid();
 
 
     // envia categorias y abre segundo pipe
     enviarSuscripcion(s, flags.pipe);
     recibirNoticias();
+    free(categorias);
     return 0;
 }

@@ -10,24 +10,39 @@
 #include "../util/list.h"
 #include "news.h"
 #include "struct.h"
+#include <bits/pthreadtypes.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <sched.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+static volatile bool suscriptor_thread_run=true;
+static volatile bool publicator_thread_run=true;
+
+void suscriptor_handler(int signal) { suscriptor_thread_run=false; }
+void publicator_handler(int signal) { publicator_thread_run=false; }
+/**
+ * @brief Subthread del publicador para contador asincrónico, con eso es posible que siempre haya un
+ * thread escuchando a cualquier publicador
+ * @param time tiempo a dormir
+ * @details Un contador de time segundos que arroja una señal si no esterminado correctamente SIGUSR2 o con SIGTERM
+ */
+void subPublicatorThread(const void *time) {
+    sleep(*(int *)time);
+    raise(SIGUSR1);
+}
 /**
  * @brief Thread principal de los publicadores
  * @param rdata void* de los datos que recibe el thread
  */
 void publicatorThread(void *rdata) {
-
-    // la primera entrega no es concurrente el acceso al archivo por lo que es
-    // posible hacer esto asi:
+    signal(SIGUSR1, publicator_handler); // para exit del thread cuando el timer finilice (si es que lo hace)
     publicator_thread_t *data = rdata;
     int fd = open(data->inputPipe, O_RDONLY);
     if (fd < 0) {
@@ -36,22 +51,28 @@ void publicatorThread(void *rdata) {
     }
     datos_p received;
     generic_t temporal, temp;
+    pthread_t subthread;
+    bool initialized = false;
 
-    while (true) {
+    while (publicator_thread_run) {
         size_t bytes = read(fd, &received, sizeof(datos_p));
 
         if (bytes != 0) {
+            if(initialized)
+                pthread_cancel(subthread); //cancelar el thread, una señal no ya que el suibthread hereda los signalhandlers
             // si bytes =0 no hay nada en el pipe y es esperar
-            strcpy(temp.news.info, received.notifica);
-            temp.news.tipo = received.tipo;
-            temp.news.len = received.len;
-            pthread_mutex_lock(&publicator_mutex); // lock a un mutex para modificar la lista
-                                                   // de noticias de forma atomica
-            insertList(&data->news[toNewsIndex(temp.news.tipo)], temp);
-            new_new = received.tipo;
-            pthread_mutex_unlock(&publicator_mutex);
-            pthread_cond_broadcast(&sub_suscriptor_cond); // broadcast a los subhilos para que
-                                                          // envien la noticia
+            if (received.tipo != '-') {
+                strcpy(temp.news.info, received.notifica);
+                temp.news.tipo = received.tipo;
+                temp.news.len = received.len;
+                pthread_mutex_lock(&publicator_mutex); // lock a un mutex para modificar la lista
+                                                       // de noticias de forma atomica
+                insertList(&data->news[toNewsIndex(temp.news.tipo)], temp);
+                new_new = received.tipo;
+                pthread_cond_broadcast(&sub_suscriptor_cond);
+                pthread_mutex_unlock(&publicator_mutex);
+            }
+
             if (received.len == 0) {
                 // si len es igual a 0 no hay noticia y significa que el
                 // publicador finaliza eliminarlo de la lista de publicadores
@@ -59,9 +80,11 @@ void publicatorThread(void *rdata) {
                 removeList(data->list, received.pid);
                 pthread_mutex_unlock(&publicator_mutex);
                 if (data->list->size == 0) {
-                    sleep(data->wait_time); // esperar el tiempo a ver si read
-                                            // produce 0 bytes si si es que ningún
-                    // publicador seguirá enviando entonces finalizar thread
+                    initialized=true;
+                    if (pthread_create(&subthread, NULL, (void *)subPublicatorThread, (void*)&data->wait_time) < 0) {
+                        perror("subpublicatorThread fail ");
+                        exit(errno);
+                    } // esperar el tiempo a ver si read produce 0 bytes si si es que ningún publicador seguirá enviando entonces finalizar thread
                 }
             } else if (checkPIDP(*data->list, received.pid)) {
                 temporal.pid = received.pid;
@@ -69,8 +92,6 @@ void publicatorThread(void *rdata) {
                 insertList(data->list, temporal);
                 pthread_mutex_unlock(&publicator_mutex);
             }
-        } else {
-            break;
         }
     }
     pthread_exit(NULL);
@@ -82,6 +103,8 @@ void publicatorThread(void *rdata) {
  */
 void subSuscriptorThread(void *rdata) {
     sub_suscriptor_thread_t *data = rdata;
+
+    printf("%s \n", data->news_preference);
     char buff[10];
     sprintf(buff, "%d", data->pid);
     if (mkfifo(buff, 0666)) {
@@ -95,24 +118,20 @@ void subSuscriptorThread(void *rdata) {
         perror("Opening pipe");
         exit(1);
     }
-    printf("HERE\n");
     for (char *p = data->news_preference; *p != '\0'; p++) {
-        printf("FOR\n");
-        node_t *t = data->news[toNewsIndex(*p)].first;
-        if(t == NULL)
+        if (*p == '-')
             continue;
-        while(t!=NULL){
+        node_t *t = data->news[toNewsIndex(*p)].first;
+        while (t != NULL) {
             write(fd, &t->data.news, sizeof(Noticia));
-            t=t->next;
+            t = t->next;
         }
     }
     close(fd);
-    printf("HERE22222\n");
-
     while (true) {
         pthread_cond_wait(&sub_suscriptor_cond, &sub_suscriptor_mutex); // esperar a que haya una noticia
-
-        if (strchr(data->news_preference,new_new)) { // si la nueva noticia recibida es de interes enviarla
+        if (strchr(data->news_preference, new_new) != NULL) { 
+                                  // si la nueva noticia recibida es de interes enviarla
             fd = open(buff, O_WRONLY);
             if (fd < 0) {
                 perror("Opening pipe");
@@ -139,18 +158,19 @@ void suscriptorThread(void *rdata) {
     while (true) {
         Suscriptor received;
         generic_t temporal;
-        sub_suscriptor_thread_t sub_data;
         size_t bytes = read(fd, &received, sizeof(Suscriptor));
+        sub_suscriptor_thread_t *sub_data = malloc(sizeof(sub_suscriptor_thread_t));
 
         if (bytes != 0) {
             // asumiendo que los suscriptores nunca se desconectan
-            sub_data.news = data->news;
-            sub_data.pid = received.pid;
-            strcpy(sub_data.news_preference, received.categorias);
+            printf("subdatap :%p\n", &sub_data);
+            sub_data->news = data->news;
+            sub_data->pid = received.pid;
+            strcpy(sub_data->news_preference, received.categorias);
             temporal.pid = received.pid;
             insertList(data->list, temporal);
 
-            if (pthread_create(&sender, NULL, (void *)subSuscriptorThread, &sub_data) < 0) {
+            if (pthread_create(&sender, NULL, (void *)subSuscriptorThread, sub_data) < 0) {
                 perror("Error creating thread for suscribers 2 ");
                 exit(errno);
             }

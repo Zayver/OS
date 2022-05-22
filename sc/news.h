@@ -20,8 +20,6 @@ NewsType toNewsIndex(const char chr){
         case 'S':
             return SUCESOS;
             break;
-        default:
-            return 0;
-            break;
     }
+    return -1;
 }
