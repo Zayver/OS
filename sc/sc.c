@@ -19,6 +19,7 @@
 #include "../util/flag.h"
 #include "../util/list.h"
 #include "linker.h"
+#include "struct.h"
 
 
 /**
@@ -40,20 +41,6 @@ void init(Flags f){
 }
 
 
-/**
- * @brief Si en algún punto el sc muere y los publicadores están conectados enviarles SIGTERM
- * @param pid pid por proceso
- */
-void endPublicators(generic_t pid){
-    if(kill(pid.pid, SIGTERM)<0){
-        perror("Error sending signal ");
-        if(errno==3){
-            //si errno vale 3 entonces no existe el proceso por lo que es probable que ya haya terminado
-            //mediante otro mecanismo, lo mas probable es un sigterm de la terminal 
-            printf("No existe el proceso, es probable que ya se haya terminado el proceso con pid: %d\n", pid.pid);
-        }
-    }
-}
 /**
  * @brief Finalizar todos los suscriptores
  * @param sus Union generica de lista especializada para suscriptor
@@ -101,6 +88,7 @@ int main(int argc, char* argv[]){
         perror("Suscriptor thread ");
         exit(errno);
     }
+    publicator_data.suscriptor_pid= suscriptor_thread;
     if(pthread_create(&publicator_thread, NULL, (void*)publicatorThread, (void*) &publicator_data)<0) {
  
         perror("Publicator thread ");
@@ -109,19 +97,19 @@ int main(int argc, char* argv[]){
 
     // todo está dictado por el thread de los publicadores 
     pthread_join(publicator_thread,NULL);
-
+    pthread_kill(suscriptor_thread, SIGTERM);
+    pthread_join(suscriptor_thread, NULL);
 
     //Enviar SIGTERM a todos los procesos suscritos al servidor
-    foreachList(publicators,endPublicators);
     foreachList(suscriptors,endSuscriptors);
 
-    //free recources and delete pipes
+    //free resources and delete pipes
     unlink(flags.publicator_pipe);
     unlink(flags.suscriptor_pipe);
     deleteList(&publicators);
     deleteList(&suscriptors);
-    //deleteList(&news);
-
+    for(int i=0; i<NEWS_LEN;i++)
+        deleteList(&news[i]);
 
     printf("Trabajo realizado :D \n");
     return 0;
