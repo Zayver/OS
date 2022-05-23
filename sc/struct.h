@@ -33,7 +33,7 @@ typedef struct sub_suscriptor_thread_t{
 
 char new_new; //flag para saber cual fue la última noticia en llegar
 
-pthread_t sender[100]; 
-unsigned int sender_index=0;
+pthread_t sender[100]; //arreglo de suscriptores
+unsigned int sender_index=0; //index y contaror de suscriptores
 
-pthread_mutex_t sub_suscriptor_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t sub_suscriptor_threads_mutex = PTHREAD_MUTEX_INITIALIZER; //mutex para manejar el arreglo de suscriptores

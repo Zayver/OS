@@ -1,3 +1,9 @@
+/**
+ * @file suscriptor.c
+ * @author Javier Ramirez
+ * @brief Rutina del suscriptor
+ * 
+ */
 #include "suscriptor.h"
 #include "Flags.h"
 #include "noticia.h"
@@ -12,10 +18,20 @@
 #include <unistd.h>
 
 
+/**
+ * @brief Borra pantalla
+ * 
+ */
 void clear(){
     system("clear");
 }
 
+/**
+ * @brief Enviar suscripción al SC
+ * 
+ * @param suscriptor //datos del suscriptor
+ * @param nombre_pipe //nombre del pipe a donde se envía
+ */
 void enviarSuscripcion(Suscriptor suscriptor, char nombre_pipe[]) {
 
     int fd;
@@ -39,6 +55,10 @@ void enviarSuscripcion(Suscriptor suscriptor, char nombre_pipe[]) {
     write(fd, &suscriptor, sizeof(Suscriptor));
 }
 
+/**
+ * @brief Rutina pprincipal, recibe nocitias y las imprime en pantalla
+ * 
+ */
 void recibirNoticias() {
     // Se abre el segundo pipe
     int fd;
@@ -73,6 +93,12 @@ void recibirNoticias() {
     }
 }
 
+/**
+ * @brief Imprimir recibir elección del usuario para seguir o no el programa
+ * 
+ * @return true Si continua
+ * @return false en caso contrario
+ */
 bool continuar() {
 
     char temp_lector;
@@ -93,8 +119,11 @@ bool continuar() {
     return true;
 }
 
-char *solicitarCategorias() {
-    char *categorias = malloc(sizeof(char) * 5);
+/**
+ * @brief Solicitar categorías al usuario
+ * @return char* noticias elegidas a suscribirse
+ */
+void solicitarCategorias(char * categorias) {
     char lector = '\0';
     bool error = false;
     int i = 0;
@@ -152,7 +181,7 @@ char *solicitarCategorias() {
                         i++;
                     }
                     printf("\nCategorias confirmadas\n");
-                    return categorias;
+                    return;
                 } else
                     error = true;
             }
@@ -171,15 +200,25 @@ char *solicitarCategorias() {
             i++;
         clear();
     }
-    return categorias;
 }
 
+/**
+ * @brief Imprime ayuda
+ * 
+ */
 void ayuda() {
     printf("El numero de argumentos ingresado es incorrecto\n");
     printf("-s pipe nominal por donde el suscriptor envía información al "
            "sistema central\n");
 }
 
+/**
+ * @brief Determinar flags
+ * 
+ * @param len longitud del arreglo
+ * @param args arreglo de argumentos
+ * @return Flags flags en su estructura
+ */
 Flags determinarFlags(int len, char *args[]) {
     Flags f;
     char *p;
@@ -198,6 +237,11 @@ Flags determinarFlags(int len, char *args[]) {
     return f;
 }
 
+/**
+ * @brief Signal handler para finalizar el programa
+ * 
+ * @param sign 
+ */
 void sig(int sign){
     exit(0);
 }
@@ -212,7 +256,8 @@ int main(int argc, char *argv[]) {
     Flags flags = determinarFlags(argc, argv);
 
     Suscriptor s;
-    char * categorias =solicitarCategorias();
+    char categorias[5];
+    solicitarCategorias(categorias);
     strcpy(s.categorias, categorias);
     s.pid = getpid();
 
@@ -220,6 +265,5 @@ int main(int argc, char *argv[]) {
     // envia categorias y abre segundo pipe
     enviarSuscripcion(s, flags.pipe);
     recibirNoticias();
-    free(categorias);
     return 0;
 }

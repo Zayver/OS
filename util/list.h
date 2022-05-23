@@ -11,23 +11,29 @@
 #include "../suscriptor/suscriptor.h"
 # include "../suscriptor/noticia.h"
 
-//#define DEBUG(X) printf("%s",X) 
-
-
+/**
+ * @brief Tipo de template para lista genérica
+ */
 typedef union genetic_t{
-    pid_t pid; //! Solo para el publicador ya que no tiene sentido guardar info de este diferente (por el moomento)
+    pid_t pid;
     struct Suscriptor_ suscriptor_t;
     struct noticia news;
     pthread_t id_suscruptor;
     //struct test b;
 } generic_t;
 
+/**
+ * @brief Node type
+ */
 typedef struct node_t{
     struct node_t* prev;
     generic_t data;
     struct node_t* next;
 }node_t;
 
+/**
+ * @brief List type
+ */
 typedef struct list_t{
     unsigned long size;
     node_t *first;
@@ -35,7 +41,11 @@ typedef struct list_t{
 }list_t;
 
 
-
+/**
+ * @brief inicializar lista
+ * 
+ * @return list_t lista inicializada
+ */
 list_t initList(){
     list_t l ;
     l.size=0;
@@ -44,6 +54,12 @@ list_t initList(){
     return l;
 }
 
+/**
+ * @brief Insertar en lista
+ * 
+ * @param list Lista en la que insertar
+ * @param data dato a insertar
+ */
 void insertList(list_t *list, generic_t data){
     node_t *add = malloc(sizeof(node_t));
     add->prev=list->last; add->next=NULL;
@@ -60,7 +76,12 @@ void insertList(list_t *list, generic_t data){
     list->size++;
 }
 
-
+/**
+ * @brief Obtener el objeto de la lista según el index
+ * @param list Lista
+ * @param index index a obtener
+ * @return generic_t* puntero al objeto deseado, NULL si no se encuentra
+ */
 generic_t * getIndex(list_t list, unsigned int index){
     node_t * aux= list.first;
     if(index>list.size)
@@ -72,6 +93,11 @@ generic_t * getIndex(list_t list, unsigned int index){
     return &aux->data;
 }
 
+/**
+ * @brief Ejecuta una función para todos los elementos de una lista
+ * @param list lista 
+ * @param func función de tipo void fn(generic_t)
+ */
 void foreachList(list_t list, void func(generic_t (f) )){
     if(list.size==0)
         return;
@@ -82,6 +108,10 @@ void foreachList(list_t list, void func(generic_t (f) )){
     }
 }
 
+/**
+ * @brief Borra una lista
+ * @param list Lista a borrar
+ */
 void deleteList(list_t* list){
     if(list->size==0)
         return;
@@ -96,12 +126,11 @@ void deleteList(list_t* list){
 }
 
 /**
- * @brief 
- * 
- * @param list 
- * @param pid 
+ * @brief Buscar PID en la lista
+ * @param list lista a buscar 
+ * @param pid pid a buscar
  * @return true si ya se encuentra el pid en la lista
- * @return false 
+ * @return false si no
  */
 bool checkPIDP(list_t list, pid_t pid){
     if(list.size==0)
@@ -119,7 +148,11 @@ bool checkPIDP(list_t list, pid_t pid){
     return false;
 
 }
-
+/**
+ * @brief Borrar un elemento de una lista
+ * @param list lista
+ * @param pid pid a borrar de list
+ */
 void removeList(list_t* list, pid_t pid){
     node_t* aux= list->first;
     while (aux!=NULL) {

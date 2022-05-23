@@ -6,7 +6,6 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdbool.h>
-
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -59,24 +58,27 @@ void endSuscriptors(generic_t sus){
     unlink(buff);
 }
 
+/**
+ * @brief Main principal de programa
+ * @param argc cantidad de argumentos, según el enunciado deben ser 7 
+ * @param argv arreglo con los flags que debe recibir el programa
+ * @return int: status de salida
+ */
 int main(int argc, char* argv[]){
     if(argc!= 7){
         help();
         exit(22);
     }
-    //flags listas
-    Flags flags = determineFlags(argc, argv);
-    list_t publicators = initList(), suscriptors= initList();
+    Flags flags = determineFlags(argc, argv); //Inicializar flags
+    list_t publicators = initList(), suscriptors= initList(); //inicializar listas
     list_t news[NEWS_LEN];
+    //inicializar cada una de las listas de noticias
     for(int i=0; i<NEWS_LEN;i++){
         news[i]= initList();
     }
     init(flags);
 
-    //signal handlers
-    //signal(SIGINT, endProcess);
-
-    //threads
+    //threads principales, 1 para manejar los publicadores y otro para manejar los suscriptores
     pthread_t suscriptor_thread, publicator_thread;
     suscriptor_thread_t suscriptor_data; suscriptor_data.inputPipe= flags.suscriptor_pipe;
     suscriptor_data.list= &suscriptors; suscriptor_data.news= news;

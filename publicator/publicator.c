@@ -1,6 +1,11 @@
+/**
+ * @file publicator.c
+ * @author Mario Ortiz
+ * @brief Publicador principal
+ * 
+ */
 #include "Datos.h"
 #include "Flags.h"
-//#include "StructPid.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -12,9 +17,14 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-/*Enviar Pipe
-abre el pipe y envia los datos
-*/
+/**
+ * @brief Enviar Pipe, abre el pipe y envia los datos
+ * 
+ * @param midat Datos a enviar a pipe
+ * @param cuantos Cantidad a enviar
+ * @param pipe Nombre del pipe
+ * @return int file descriptor del pipe
+ */
 int EnviarPipe(datos_p *midat, int cuantos, char pipe[]) {
 
     int i, fd;
@@ -43,20 +53,28 @@ int EnviarPipe(datos_p *midat, int cuantos, char pipe[]) {
     
 }
 
-/* asignar
-   inserta una nueva noticia en la lista en la posicion pos
-   e inicializa el tipo de noticia, el contenido y el tamaño del mismo
-*/
+/**
+ * @brief asignar inserta una nueva noticia en la lista en la posicion e inicializa el tipo de noticia, el contenido y el tamaño del mismo
+ * 
+ * @param dat data
+ * @param prueba tipo de noticia
+ * @param notifica noticia a enviar
+ * @param pos posicion actual del arreglo
+ */
 void asignar(datos_p *dat, char prueba, char *notifica, int pos) {
     dat[pos].len = (strlen(notifica));
     dat[pos].tipo = prueba;
     strcpy(dat[pos].notifica, notifica);
 	dat->pid= getpid();
 }
-/* DeterminarFlags
-   Valida que tipo de argumento se tiene segun los flags correspondientes
-   en este caso se ignora el nombre
-*/
+
+/**
+ * @brief DeterminarFlags Valida que tipo de argumento se tiene segun los flags correspondientes en este caso se ignora el nombre
+ * 
+ * @param len longitud del arreglo
+ * @param args arreglo de flags
+ * @return Flags flags en su respectiva estrructura
+ */
 Flags determinarFlags(int len, char *args[]) {
     Flags f;
     char *p;
@@ -82,10 +100,10 @@ Flags determinarFlags(int len, char *args[]) {
     return f;
 }
 
-/* ayuda
-   cuando no se ingresan la cantidad de argumentos que se eseran
-   explica el tipo de flags que se pueden utlizar y sus funciones
-*/
+/**
+ * @brief ayuda cuando no se ingresan la cantidad de argumentos que se eseran explica el tipo de flags que se pueden utlizar y sus funciones
+ * 
+ */
 void ayuda() {
     printf("El numero de argumentos ingresado es incorrecto\n");
     printf("-p pipe nominal por donde los publicadores envían información\n");
